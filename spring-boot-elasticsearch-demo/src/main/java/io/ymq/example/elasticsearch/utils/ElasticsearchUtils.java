@@ -395,9 +395,9 @@ public class ElasticsearchUtils {
             for (String s : matchStr.split(",")) {
                 String[] ss = s.split("=");
                 if (matchPhrase == Boolean.TRUE) {
-                    boolQuery.must(QueryBuilders.matchPhraseQuery(s.split("=")[0], s.split("=")[1]));
+                    boolQuery.must(QueryBuilders.matchPhraseQuery(ss[0], ss[1]));
                 } else {
-                    boolQuery.must(QueryBuilders.matchQuery(s.split("=")[0], s.split("=")[1]));
+                    boolQuery.should(QueryBuilders.matchQuery(ss[0], ss[1]));
                 }
             }
         }
@@ -410,7 +410,11 @@ public class ElasticsearchUtils {
             //highlightBuilder.postTags("</span>");//设置后缀
 
             // 设置高亮字段
-            highlightBuilder.field(highlightField);
+            String[] ws = highlightField.split(",");
+            for(String s: ws){
+                highlightBuilder.field(s);
+            }
+
             searchRequestBuilder.highlighter(highlightBuilder);
         }
 
@@ -453,23 +457,41 @@ public class ElasticsearchUtils {
      */
     private static List<Map<String, Object>> setSearchResponse(SearchResponse searchResponse, String highlightField) {
         List<Map<String, Object>> sourceList = new ArrayList<Map<String, Object>>();
-        StringBuffer stringBuffer = new StringBuffer();
 
-        for (SearchHit searchHit : searchResponse.getHits().getHits()) {
+
+
+        for (SearchHit searchHit : searchResponse.getHits()) {
+
             searchHit.getSource().put("id", searchHit.getId());
 
             if (StringUtils.isNotEmpty(highlightField)) {
 
                 System.out.println("遍历 高亮结果集，覆盖 正常结果集" + searchHit.getSource());
-                Text[] text = searchHit.getHighlightFields().get(highlightField).getFragments();
+                //处理多个高亮词
+                String[] ws = highlightField.split(",");
+                for(String w: ws){
+                    StringBuffer stringBuffer = new StringBuffer();
+                    if(searchHit.getHighlightFields().get(w) == null){
+                        continue;
+                    }
+                    Text[] text = searchHit.getHighlightFields().get(w).getFragments();
+                    if (text != null) {
+                        for (Text str : text) {
+                            stringBuffer.append(str.string());
+                        }
+                        //遍历 高亮结果集，覆盖 正常结果集
+                        searchHit.getSource().put(w, stringBuffer.toString());
+                    }
+                }
 
-                if (text != null) {
+
+                /*if (text != null) {
                     for (Text str : text) {
                         stringBuffer.append(str.string());
                     }
                     //遍历 高亮结果集，覆盖 正常结果集
                     searchHit.getSource().put(highlightField, stringBuffer.toString());
-                }
+                }*/
             }
             sourceList.add(searchHit.getSource());
         }

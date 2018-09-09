@@ -98,10 +98,10 @@ public class ElasticsearchUtilsTest {
         map.put("name", "鹏磊");
         map.put("age", 11);
         map.put("interests", new String[]{"阅读", "学习"});
-        map.put("about", "这条数据被修改");
+        map.put("about", "三");
         map.put("processTime", new Date());
 
-        ElasticsearchUtils.updateDataById(JSONObject.parseObject(JSONObject.toJSONString(map)), "ymq_index", "about_test", "id=11");
+        ElasticsearchUtils.updateDataById(JSONObject.parseObject(JSONObject.toJSONString(map)), "ymq_index", "about_test", "id=4");
     }
 
     /**
@@ -136,12 +136,12 @@ public class ElasticsearchUtilsTest {
     @Test
     public void searchListData( ) throws ParseException {
 
-        long startTime = DateUtils.parseDate("2017-11-22 00:00:00", "yyyy-MM-dd HH:mm:ss").getTime();
-        long endTime = DateUtils.parseDate("2017-11-23 00:00:00", "yyyy-MM-dd HH:mm:ss").getTime();
+        long startTime = DateUtils.parseDate("4017-11-22 00:00:00", "yyyy-MM-dd HH:mm:ss").getTime();
+        long endTime = DateUtils.parseDate("1017-11-23 00:00:00", "yyyy-MM-dd HH:mm:ss").getTime();
 
-        String index = "all_assignservice-*";
-        String type = "all_assignservice";
-        String matchStr = "message=C000211171122024601";
+        String index = "ymq_index";
+        String type = "about_test";
+        String matchStr = "about=这条数据被修改";
         int size = 1000;
 
         List<Map<String, Object>> mapList = ElasticsearchUtils.searchListData(index, type, startTime, endTime, size, "", "", false, "", matchStr);
@@ -154,7 +154,7 @@ public class ElasticsearchUtilsTest {
 
         for (Map<String, Object> guid : mapList) {
 
-            String message = guid.get("message").toString();
+            String message = guid.get("about").toString();
 
             Integer guidIndex = message.indexOf("guid");
 
@@ -223,13 +223,16 @@ public class ElasticsearchUtilsTest {
      * fields         需要显示的字段，逗号分隔（缺省为全部字段）
      * sortField      排序字段
      * matchPhrase    true 使用，短语精准匹配
-     * highlightField 高亮字段
+     * highlightField 高亮字段 xxx,aaa
      * matchStr       过滤条件（xxx=111,aaa=222）
      */
     @Test
     public void searchDataPage() {
 
-        EsPage esPage = ElasticsearchUtils.searchDataPage("ymq_index", "about_test", 10, 5, 0, 0, "", "processTime", false, "name", "name=鹏磊");
+        EsPage esPage = ElasticsearchUtils
+                .searchDataPage("ymq_index", "about_test", 0, 5,
+                        0, 0, "", "", false,
+                        "name,about", "about=张三,name=磊");
 
         for (Map<String, Object> item : esPage.getRecordList()) {
 
